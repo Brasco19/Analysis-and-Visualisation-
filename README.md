@@ -22,7 +22,28 @@ If you are new to Analysis, Julia is a great place to begin. This is not a "Juli
 
 If you would like an overview of Julia's Data Analysis Tools Ecosystems, watch David Anthiff's video on the subject[^1]. If you would like a comprehensive tutorial series specifically for data Scientists, watch Huda Nassar's video series[^2]. If you just want to learn how to use the DataFrames Package, watchbogumił kamiński's video series[^3]. However, if you have a basic understanding of Julia and have never done any analysis, then this lecture is for you.
 
-## Programming Environment
+## Iris Flower Data Set
+The Iris Flower Data Set is like the "Hello, World!" of Data Analysis lectures. The Iris Flower Data Set is from 1936 paper by the British statitician and geneticist Sir Ronald Fisher.
+
+![Iris Dataset](image/Iris_dataset_scatterplot.svg)
+
+ The actual measurements were recorded by Edgar Anderson,who was an American botanist working with Ronald Fisher and some others under a followship 1929. The data set is sometimes referred to as either Fisher's Iris data set, or Anderson's Iris data set. Ronald Fisher had some controversial personal views, which have resurfaced in recent years. We will not say any more nore about it, other than to stata a disclaimer that us use the Iris data set in no way endorses the opinion of Ronald Fisher. We are only using the Iris data set because it is a widely used data set to introduce the subject of **Computational Analysis**. 
+ The data set contains 150 records under 5 attributes: Sepal Length, Sepal Width, Petal Length, Petal Width and Species. There are 3 species of the Iris Flower that are recorded in this data set: Setosa, Versiclor and Virginica. There are 50 records for each species. Most people know what a flower petal is, but a flower sepal is not commonly known. 
+
+ ![3 species of iris flower](image/maxresdefault.jpg)
+
+> [!TIP]
+> The petal is the part that points up, while the sepal is the part that falls down. 
+
+Based on this data set, Ronald Fisher developed a statistical model so that he could classify the different species given just 4 measurements without actually having to see the physical flower. Like "Hello, World!", working on the Iris data set provides a non-scientific, qualitative way to evaluate how easy or how difficult ti is to perform ananlysis using a particular programming language. If it is easy to perform analysis on the Iris data set in that language, then it is a sign that it may be easy to perform analysis on other data sets as well. Conversely, if it is difficult to perform analysis on the Iris data set in that language, then it may be a red flag that performing analysis in that language may be difficult ofr other dta sets as well. 
+
+Let us jump into VS Code and perform our own analysis on the Iris data sety using Julia
+
+### Visualisation of Iris dataset
+
+![DataVoyager](image/irisvisual1.png)
+
+
 
 
 
