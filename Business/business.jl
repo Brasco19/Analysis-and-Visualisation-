@@ -130,3 +130,198 @@ scene
 # save plot
 
 save("supply-demand.svg", scene)
+
+# exit REPL
+
+# start REPL 
+
+# Mortgage Calculator Example
+
+# Payment function from Wikipedia
+
+function pmt(r, N, P)
+    c = r * P / (1 - (1 +r)^-N)
+end
+
+# initialize variables
+
+r = 3.92 / 100 / 12 # convert % to decimal then convert annual to monthly
+N = 30 * 12  # convert years to months
+P = 100_000  # principal amount
+
+# calculate Payment
+
+c = pmt(r, N, P)
+
+# calculate total cost of mortgage 
+
+total = c * N
+
+
+# mortgage table function 
+
+function pmt_table(APR, years, amount)
+    # initialize variables 
+    r = APR / 100 / 12
+    N = years * 12
+    P = amount
+
+    # calculate payment
+    c = pmt(r, N, P)
+
+    # initialize BASE
+    B = P               # Beginning balance
+    A = r * B           # Add monthly Interest Charge
+    S = c               # Subtract monthly payment 
+    E = B + A - S       # Ending balance 
+    data = [B, A, S, A]
+
+    # use for-loop to generate column vector
+    for i in 1:(N-1)
+        B = E
+        A = r * B
+        S = c
+        E = B + A - S
+        push!(data, B, A, S, E)
+    end
+
+    # reshape column vector 
+    wide = reshape(data, 4, N)
+    tall = transpose(wide)
+    # convert tall table into Array
+    tallarray = Array(tall)
+
+    return tallarray
+end
+
+# initialize variables 
+
+APR = 3.92
+years = 30
+amount = 100_000
+
+# generate mortgage table
+ data = pmt_table(APR, years, amount)
+
+# display mortgage table
+
+vscodedisplay(data)
+
+# save table to CSV
+
+using DelimitedFiles        #included in Julia's standard library
+
+writedlm("pmt_table.csv", data, ",")
+
+# prep data for plotting 
+
+# assign columns to variables
+
+interest = data[:, 2]
+payment = data[:, 3]
+
+# calculate principal payments (payment --interest)
+p_pmt = payment - interest
+
+# visualize data
+
+using CairoMakie        # v0.3.12
+
+# initialize empty scene and layout
+
+scene, layout = layoutscene(resolution = (750, 325))
+scene
+
+# add first axis
+
+ax1 = layout[1, 1]= Axis(scene,
+    xlabel = "Time (months)", xlabelsize = 10, xticklabelsize = 9, xticksize = 3,
+    ylabel = "Amount (dollars)", ylabelsize = 10, yticklabelsize = 9, yticksize = 3,
+    ytickformat = "\${:d}",
+    title = "Mortgage Payment Schedule", titlesize = 12, titlefont = "Helvetica", titleweight = "bold"
+)
+scene
+
+# add line plots
+
+lineobject1 = lines!(ax1, p_pmt, linewidth = 1, color = :blue)
+lineobject2 = lines!(ax1, interest, linewidth = 1, color = :red)
+lineobject3 = lines!(ax1, payment, linewidth = 1, color = :green)
+scene
+
+# add legend
+
+leg1 = Legend(scene, [lineobject1, lineobject2, lineobject3],
+    ["Principal Payment", "Interest", "Payment"], halign = :right, valign = :center,
+    tellheight = false, tellwidth = false, margin = (10, 10, 10, 10),
+    labelsize = 5, linewidth = 1, padding = (10, 10, 5, 5),
+    patchsize = (15, 5)
+)
+layout[1, 1] = leg1
+scene
+
+# plot cumulative principal and interest payments
+
+# calculate cumulative principal payments
+
+function total_p_pmt(p_pmt)
+    runningtotal = p_pmt[1]
+    data  = [runningtotal]
+    for i in 2:length(p_pmt)
+        runningtotal = runningtotal + p_pmt[i]
+        push!(data, runningtotal)
+    end
+    return data
+end
+
+p_pmtsum = total_p_pmt(p_pmt)
+vscodedisplay(p_pmtsum)
+
+# calculate cumulative interest payments
+
+function total_int(interest)
+    runningtotal = interest[1]
+    data  = [runningtotal]
+    for i in 2:length(interest)
+        runningtotal = runningtotal + interest[i]
+        push!(data, runningtotal)
+    end
+    return data
+end
+
+intsum = total_int(interest)
+vscodedisplay(intsum)
+
+# plot data
+
+# add first axis
+
+ax2 = layout[1, 2]= Axis(scene,
+    xlabel = "Time (months)", xlabelsize = 10, xticklabelsize = 9, xticksize = 3,
+    yticklabelsize = 7, yticksize = 3,
+    ytickformat = "\${:d}",
+    title = "Cumulative Payment", titlesize = 12, titlefont = "Helvetica", titleweight = "bold"
+)
+scene
+
+# add line plots
+
+lineobject1 = lines!(ax2, p_pmtsum, linewidth = 1, color = :blue)
+lineobject2 = lines!(ax2, intsum, linewidth = 1, color = :red)
+scene
+
+# add legend
+
+leg2 = Legend(scene, [lineobject1, lineobject2],
+    ["Principal Payment", "Interest"], halign = :center, valign = :top,
+    tellheight = false, tellwidth = false, margin = (10, 10, 10, 10),
+    labelsize = 5, linewidth = 1, padding = (10, 10, 5, 5),
+    patchsize = (15, 5)
+)
+layout[1, 2] = leg2
+scene
+
+# save plot
+
+save("mortgage-calculator.svg", scene)
+

@@ -95,11 +95,133 @@ Now that we have our formulae reconfigured, we can load the matrix $A$ and the v
 
 ![Price and Quantity equilibrium](../Business/images/price_quantity_equi.png)
 
-It looks like we were close just by looking at the plot. The equilibrium price is $\$ 7.60$, which is in between the 7 and 8 dollars that we guessed. The equilibrioum is $16.8$ units, which is close to the 17 units that we guessed. Let's add the equilibrium price and quantity to our plot. 
+It looks like we were close just by looking at the plot. The equilibrium price is \$ 7.60, which is in between the 7 and 8 dollars that we guessed. The equilibrioum is 16.8 units, which is close to the 17 units that we guessed. Let's add the equilibrium price and quantity to our plot. 
 
 ![plot_4](../Business/images/plot_4.svg)
 
 The vlines-bang and hlines-bang Functions generate either a Vertical line or a Horizontal line, respectively. The location of those lines needs to be entered as a single element Array. The $xmax$ and the $ymax$ attributes are also entered as a single element Array, but must be floating point number between 0 and 1. The number indicates how far you want that line to travel away from the axis relative to the size of the plot. For example, if you entered $0.5$, the line  would go half way from the axis. We are not sure if there is a more precise way to calculate this number, but I had to find my numbers through trial and error.  
+
+## Mortgage Calculator
+Our next example is a Mortgage Calculator. This example will work for any fixed rate loan in the US, like a car loan or a student  loan, and not just home mortgages. 
+If you do a Google search for loan carlculator, it brings up their own Mortgage calculator that calculates the monthly payment based on the Mortgage Amount, the Interest 
+Rate and the Mortgage period. It  also provides a Total cost of the mortgage. Google does not provide any backup to this calculation, so let's see if we can re-create the
+results using Julia. 
+
+### Example
+Before we write any code, we need to find a formula to use. Thankfully, there is a Wikipedia article called [**Mortgage Calculator**](https://en.wikipedia.org/wiki/Mortgage_calculator) that provides a couple of Monthly Payment formulae that we can use to calculate the monthly payment for a fixed rate mortgage given the values of the variables $r,N$ and $P$.
+
+* $r$ is the monthly interest rate. In the US, banks advertise their lending rates as an Annual Percentage Rate, or APR. The monthly interest rate for a fixed rate  mortgage is just the APR divided by 12 months. 
+* $N$ is the number of monthly payments. In the US, banks advertise the length of their loans in Years. The number of monthly payments is just the number of Years times 12 months.
+* $P$ is the amount borrowed, which is also known as the loan's Principal. 
+
+There are two formulae that we cab use to calculate the monthly payment amount. 
+
+$c=\begin{cases}\frac{rP}{1-(1+r)^{-N}}=\frac{rP(1+r)^{N}}{(1+r)^{N}-1},& r\neq0\\\frac{P}{N},& r=0\end{cases}$
+
+We are going to use the formula on the left, since it is a little easier to type in. However, you can use either formula and it will give you  same answer. 
+
+![Mortgage Calculator](../Business/images/mortgage_calculator.png)
+
+We got the same answers as Google Mortgage calculator, so we know that the formula that we found in the Wikidepia article works. 
+
+### Black  box
+Having a mortgage calculator is nice, but it is a black box, since all we are doing is plugging in variables into a Function and having the Function spit out an answer without any explanations. For example, the total cost of the mortgage is $170000, which means we would have to pay $70000 in interest payments. How did an interest rate of 3.92% on $100000 turn into $70000?
+
+In order to better understand how this loan works, it would be helpful to have a table that shows the effects to the Monthly Interest Charge and the effects on the Monthly Payments on our opening and closing balances for each month for the length of the loan. How could we generate such a table? Before writing the code to generate this table, we need to understand a few concepts.
+
+1. The first concept is something called BASE, which stands for Begin, Add, Substract and End. We are not sure if they teach this in school, but it is used in business all the time. For example, BASE is used to keep track of Inventory. Let's say you are running a business that makes and sells widgets. If you start with a Beginning Inventory of $0$, and you Add a Production quantity of 25 widgets, and you Subtract a Sales quantity of 10 widgets, then by using BASE, your Ending Inventory is $0+25-10$, which equals $=15$ widgets. The Ending Inventory for this Month, then becomes the Beginning Inventory for the next Month. 
+You repeat this process every month to keep track of your monthly inventory balances. We can use this concept to help us to generate a mortgage table:
+* The (B) Beginning Balance will be the initial amount of our loan.
+* Next, we (A) add the Monthly Interest charge.
+* Then, we (S) substract our Monthly Payment.
+* The result is the (E) Ending Balance for the first month. 
+
+The Ending Balance fo the month becomes the Beginning Balance for the next month. We repeat this process fpr the number of months for this loan. 
+
+2.  The second concept to know is that Julia stores the data in any Array as a column vector. So, if you use a for-loop to push a bunch of data into an Array, the resulting Array will be a column vector. 
+
+3. The third concept to know is that in Julia, multidimensional Arrays are displyed in "column-major order". So, if you reshape a column vector into a 2-dimensional matrix, Julia will initially populate all of the rows in the first column before moving to populate all of the rows in the second column, and so on. 
+
+Armed with this knowledge, let's try to create a Function that will generate a Mortgage table for us, so that we can better understand how fixed rate loans work. At the same time, let's change how we enter in the arguments to our new Function so that it is more consumer-friendly, and matches how the Google mortgage calculator works.
+
+### Generate mortgage table
+```
+ data = pmt_table(APR, years, amount)
+ ```
+Well, it generated an Array with 360 rows and 4 columns, which looks promising. Let's take a look at the Matrix using vscodedisplay.
+
+```
+vscodedisplay(data)
+```
+* Column 1 is the Beginning Balance for each Month.
+* Column 2 is the Interest that the bank charges you every month.
+* Column 3 is the Payment that you make to the Bank every month.
+* Column 4 is the Ending Balance for each month.
+
+As you can see, Beginning Balance for Month 1 starts at 100_000. If you scroll all the way down to the bottom, you will see that the Ending Balance for the last month is zero. These are Floating Point numbers, so you will see a very small number at the end that is essentially zero. In reality, the bank will round off your payment number to the nearest penny, so that actual table that your bank uses will be slightly different. 
+
+The other thing you see is that all of the numbers in Column 3 are the same. That is because that is the amount that you owe to the bank every month for the next 30 years. Depressing, right? 
+
+Finally, in  Column 2, we see that the amount is decreasing over time. It starts at around $327, but ends up around $1.50. That is because the Interest that the bank charges you is based on the Beginning Balance for that month. As your Beginning Balance shrinks over time, so does your monthly Interest Charge. You can save your Matrix as a CSV file. 
+
+> DelimitedFiles is part of Julia's standard library, so there is no need to add it. 
+
+The table views are interesting, but it would be helpful to have some plots so that we can better understand the data. 
+
+### visualization of data
+Before we can generate plots, we need to prepare the data. Our mortage table shows our total monthly payments and the monthly interest charges, but it does not show how much of the monthly payment is going towards paying down the principal, which is just the total monthly payment minus the monthly interest charge. Now, let's generate some plots using CairoMakie.
+![Mortgage plot 1](../Business/images/plot_mortgage_1.svg)
+
+You should see a very wide plot. When we add the second plot, it will automatically reformate itself. 
+![Mortgage plot 2](../Business/images/plot_mortgage_2.svg)
+
+Let's add a legend by going back up to the Supply and Demand  plot and copying and pasting the legend code. 
+
+For our second plot, let's take a look at how much we are paying on principal and interest over time. We have the data on how much we are paying each month, but we need to calculate a running total and put those amounts into a vector. 
+
+```
+p_pmtsum = total_p_pmt(p_pmt)
+vscodedisplay(p_pmtsum)
+```
+This is cumulative principal payments. It starts at $146 and end at $100,000. Now, let's calculate the cumulative interest payments. 
+
+```
+intsum = total_int(interest)
+vscodedisplay(intsum)
+```
+This is the cumulative interest payments. It starts at $327 and ends at $70,000. So, the bank gives you $100,000 and you have to give them $170,000. Does that sound like a good deal to you? For better or for worse, this is how a lot of folks in the US live --buried in debt. 
+
+Let's plot this data to see if we can gain a better understanding of how these payments look over time. Copy the axis information from the first plot. 
+
+![Cumulative payment](../Business/images/plot_cumulative_pmt.svg)
+
+Now, you should see that the plot has reformatted to fit 2 plots side-by-side. Let's add some line plots on the right side. 
+
+![Cumulative interest](../Business/images/plot_cumulative_int.svg)
+
+If you look on the plot on the left, it shows that of the initial monthly payment, roughly two-thirds is going to pay interest, while only one-third is going to pay off the principal. In fact, for roughly the first 10 years, you are mostly just paying interest. The plot on the right shows how those interest payments add up over the years.  3.92% may sound like a low number, but as you can see, it adds up over time. 
+
+
+## Key Takeaways
+Ok, so maybe that was not as fascinating as we had promised, but these examples did demonstate some important aspects to consider when using Julia as an analytic tool. 
+
+Fisrt, you need to spend some time in order to prepare your information, so that Julia can understand it. Just because you have the formula for Supply and Demand, that does not mean that Julia will understand how to plot it, or how to solve Linear Algebra equations with it. 
+
+Second, when dealing with data in Julia, it is important to think in terms of column vectors. Regardless of the shape of the Array, at its core, Julia views all your data as one tall column vector. In our mortgage table example, our nice 360 by 4 matrix started its life as a 1.440 element column vector.
+
+Third, visualization is not the end product of your analysis. Visualization is a part of the entire process, whether it is at the beginning, middle or end of your analysis workflow. Different plotting packages offer different strengths and weaknesses. 
+
+In the previous course, we use DataVoyager. Its intuitive, drag and drop user interface makes it an excellent tool for the early, exploratory phase of your analysis. However, it is customization capabilities are limited, so it is not necessarily the best visualization tool moving forward in your workflow. 
+
+Today, we saw the other end of the visualization spectrum. Makie is a massive plotting package that is endlessly customizable.  However, being able to harness its full potential requires some investment on your part to loan the more verbose syntax. While it may not be ideal for early-stage exploratory analysis, it is an excellent tool for the middle o later stages of your analysis workflow. 
+
+Finally, regardless of which tool, or tools, you choose to employ, they are no substitute for your own mind. At the end the day, the real analysis is perfomrned by you, and not your computer. The most important skill that you can learn over the next several weeks is to learn how to harness that ancient power that we humans developed in prehistoric times to separate ourselves from other animals -- that being, the human instinct, to take thinks apart and to wonder how they work. 
+
+
+
+
+
+
 
 
 
